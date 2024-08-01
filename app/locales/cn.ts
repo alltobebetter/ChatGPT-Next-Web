@@ -9,7 +9,7 @@ const cn = {
     Unauthorized: isApp
       ? "检测到无效 API Key，请前往[设置](/#/settings)页检查 API Key 是否配置正确。"
       : `请在[登录](/#/auth)页面输入你的访问密码。如果你还不知道密码是什么，可以去[爱发电](https://afdian.com/a/suaolin)获取。
-无论是写小说，绘画，还是论文，解答问题，扮演角色都可以！均搭载GPT4，Gemini-1.5，Llama-3.1和Palm等高级模型。`,
+无论是写小说，绘画，还是论文，解答问题，扮演角色都可以！均搭载GPT4，Gemini-1.5，Llama-3.1和Palm等高级模型。😊`,
   },
   Auth: {
     Title: "需要密码",
