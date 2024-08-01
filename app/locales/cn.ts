@@ -445,7 +445,11 @@ const cn = {
   },
   Store: {
     DefaultTopic: "新的聊天",
-    BotHello: "欢迎来到苏淋の助手！无论你是写论文或者是问问题，聊天等等这里都是可以的哦！<br>我们使用的均为目前领域中的高级模型，会远超于市面上的一般机器人！<br>由于是非盈利站点，我们都是用的最低成本来设置价格，您可以在规定时间内无限的使用我们的机器人！",
+    BotHello: `如果在使用中遇到问题，请参阅：
+
+[如何更改更适合我的机器人模型](https://page.suaolin.one/change-bot) / [我如何AI绘画](https://page.suaolin.one/aidraw) / [出现长时间不回复或者回复异常情况](https://page.suaolin.one/error) / [仍然有其他问题](https://page.suaolin.one/other)
+
+今天有什么可以帮助您的吗😄`,
     Error: "出错了，稍后重试吧",
     Prompt: {
       History: (content: string) => "这是历史聊天总结作为前情提要：" + content,
