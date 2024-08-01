@@ -15,7 +15,7 @@ const cn = {
     Title: "需要密码",
     Tips: "输入你在爱发电或者其他位置获取的密码",
     SubTips: "或者输入你的 OpenAI 或 Google API 密钥",
-    Input: "在此处填写访问码",
+    Input: "在此处填写密码",
     Confirm: "确认",
     Later: "稍后再说",
   },
