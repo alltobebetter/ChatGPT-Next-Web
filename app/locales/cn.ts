@@ -447,7 +447,7 @@ const cn = {
   Store: {
     DefaultTopic: "新的聊天",
     BotHello: `如果在使用中遇到问题，请参阅：
-[如何更改更适合我的机器人模型](https://page.suaolin.one/change-bot) / [我如何AI绘画](https://page.suaolin.one/aidraw) / [出现长时间不回复或者回复异常情况](https://page.suaolin.one/error) / [仍然有其他问题](https://page.suaolin.one/other)
+[如何更改更适合我的机器人模型](https://page.suaolin.one/change-bot) / [我如何AI绘画](https://page.suaolin.one/aidraw) / [出现长时间不回复或者回复异常情况](https://page.suaolin.one/error) / [我如何画不允许画的图像](https://page.suaolin.one/how-draw-nsfw) / [仍然有其他问题](https://page.suaolin.one/other)
 今天有什么可以帮助您的吗😄`,
     Error: "出错了，稍后重试吧",
     Prompt: {
