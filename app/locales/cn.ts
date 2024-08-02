@@ -8,8 +8,10 @@ const cn = {
   Error: {
     Unauthorized: isApp
       ? "检测到无效 API Key，请前往[设置](/#/settings)页检查 API Key 是否配置正确。"
-      : `请在[登录](/#/auth)页面输入你的访问密码。如果你还不知道密码是什么，可以去[爱发电](https://afdian.com/a/suaolin)获取。
-无论是写小说，绘画，还是论文，解答问题，扮演角色都可以！均搭载GPT4，Gemini-1.5，Llama-3.1和Palm等高级模型。😊`,
+      : `欢迎使用苏淋の助手，请在[登录](/#/auth)页面输入你的访问密码，如果你不知道密码，可以去[爱发电](https://afdian.com/a/suaolin)获取。
+此AI助手模型包括Llama 3.1, Llama 34B（编程用）, Google Palm, GPT-4o, GPT-4o（联网分析版本）, GPTs, Gemini 1.5 Flash, Stable Diffusion, Stable Diffusion 3, Playground V2.5等一系列多模态大模型，面向各种行业和领域，无论是AI绘画，写论文，问问题，写小说等都绰绰有余，我们的模型为纯原模型，能超过目前市面上的90%以上的模型，因此您可以放心使用。我们的AI纯成本价位，低于大多数市面上同类型的商家。
+如果您的需求小，只是想接触AI以及简单的聊天，我们也提供了[免费版本](https://ai.suaolin.one/)供您使用。
+如果您已经购买过密码，出现此提示可能是由于输入错误或者已经过期。`,
   },
   Auth: {
     Title: "需要密码",
