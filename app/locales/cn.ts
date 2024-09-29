@@ -78,6 +78,8 @@ AIBoB可以帮助您：
     Confirm: "确认",
     Later: "稍后再说",
     SaasTips: "配置太麻烦，想要立即使用",
+    TopTips:
+      "🥳没有密码？去爱发电获取！",
   },
   ChatItem: {
     ChatItemCount: (count: number) => `${count} 条对话`,
