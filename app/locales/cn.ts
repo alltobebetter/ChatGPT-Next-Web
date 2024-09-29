@@ -76,7 +76,7 @@ AIBoB可以帮助您：
     Input: "在此处填写密码",
     Confirm: "确认",
     Later: "稍后再说",
-    SaasTips: "配置太麻烦，想要立即使用",
+    SaasTips: "没有密码？点击购买密码！",
     TopTips:
       "🥳没有密码？去爱发电获取！",
   },
