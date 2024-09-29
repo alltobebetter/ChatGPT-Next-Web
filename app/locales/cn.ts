@@ -14,7 +14,7 @@ const cn = {
 
 **购买密码并开始您的AIBoB之旅！**
 
-点击[爱发电](https://afdian.com/dashboard/stats)购买密码，立即开始享受最先进的AI技术！
+在这里[输入密码](https://www.aibob.top/#/auth)以开始聊天。如果您还没有密码，点击[爱发电](https://afdian.com/dashboard/stats)购买密码，立即开始享受最先进的AI技术！
 
 **遇到问题？**
 
@@ -44,8 +44,7 @@ AIBoB可以帮助您：
 
 **购买密码并开始您的AIBoB之旅！**
 
-点击[爱发电](https://afdian.com/dashboard/stats)购买密码，立即开始享受最先进的AI技术！
-
+在这里[输入密码](https://www.aibob.top/#/auth)以开始聊天。如果您还没有密码，点击[爱发电](https://afdian.com/dashboard/stats)购买密码，立即开始享受最先进的AI技术！
 **遇到问题？**
 
 访问[BoBHelp](https://help.aibob.top)获取帮助，解决聊天中的问题，如无法绘画或出现乱码等。
