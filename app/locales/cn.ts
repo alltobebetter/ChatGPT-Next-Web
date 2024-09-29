@@ -250,12 +250,12 @@ AIBoB可以帮助您：
     },
 
     Update: {
-      Version: (x: string) => `当前版本：${x}`,
-      IsLatest: "已是最新版本",
+      Version: (x: string) => `AIBoB版本：${x}`,
+      IsLatest: "这是最新的版本辣！",
       CheckUpdate: "检查更新",
       IsChecking: "正在检查更新...",
-      FoundUpdate: (x: string) => `发现新版本：${x}`,
-      GoToUpdate: "前往更新",
+      FoundUpdate: (x: string) => `这个版本正对哦！${x}`,
+      GoToUpdate: "点我也没用，我不会更新的",
     },
     SendKey: "发送键",
     Theme: "主题",
