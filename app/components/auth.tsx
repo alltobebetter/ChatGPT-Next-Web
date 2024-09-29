@@ -149,5 +149,30 @@ function TopBanner() {
   if (!isVisible) {
     return null;
   }
-
+  return (
+    <div
+      className={styles["top-banner"]}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div className={`${styles["top-banner-inner"]} no-dark`}>
+        <span>
+          {Locale.Auth.TopTips}
+          <a
+            href={SAAS_CHAT_URL}
+            rel="stylesheet"
+            onClick={() => {
+              trackSettingsPageGuideToCPaymentClick();
+            }}
+          >
+            {Locale.Settings.Access.SaasStart.ChatNow}
+            <Arrow style={{ marginLeft: "4px" }} />
+          </a>
+        </span>
+      </div>
+      {(isHovered || isMobile) && (
+        <Delete className={styles["top-banner-close"]} onClick={handleClose} />
+      )}
+    </div>
+  );
 }
