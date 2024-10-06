@@ -14,7 +14,7 @@ const cn = {
 
 **购买密码并开始您的AIBoB之旅！**
 
-在这里[输入密码](./#/auth)以开始聊天。如果您还没有密码，点击[爱发电](https://afdian.com/a/suaolin)购买密码，立即开始享受最先进的AI技术！
+在这里[输入密码](https://chat.aibob.top/#/auth)以开始聊天。如果您还没有密码，点击[爱发电](https://afdian.com/a/suaolin)购买密码，立即开始享受最先进的AI技术！
 
 **遇到问题？**
 
