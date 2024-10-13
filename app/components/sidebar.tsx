@@ -165,11 +165,17 @@ export function SideBarHeader(props: {
   subTitle?: string | React.ReactNode;
   logo?: React.ReactNode;
   children?: React.ReactNode;
+  shouldNarrow?: boolean;
 }) {
-  const { title, subTitle, logo, children } = props;
+  const { title, subTitle, logo, children, shouldNarrow } = props;
   return (
     <Fragment>
-      <div className={styles["sidebar-header"]} data-tauri-drag-region>
+      <div
+        className={`${styles["sidebar-header"]} ${
+          shouldNarrow ? styles["sidebar-header-narrow"] : ""
+        }`}
+        data-tauri-drag-region
+      >
         <div className={styles["sidebar-title-container"]}>
           <div className={styles["sidebar-title"]} data-tauri-drag-region>
             {title}
@@ -227,6 +233,7 @@ export function SideBar(props: { className?: string }) {
         title="AIBoB / 您的AI助手"
         subTitle="与智能的AI助手对话，角色扮演或者创造能想到的一切🍊"
         logo={<ChatGptIcon />}
+        shouldNarrow={shouldNarrow}
       >
         <div className={styles["sidebar-header-bar"]}>
           <IconButton
