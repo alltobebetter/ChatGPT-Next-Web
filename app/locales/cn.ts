@@ -59,7 +59,7 @@ const cn = {
     Input: "在此处填写访问码",
     Confirm: "确认",
     Later: "稍后再说",
-    SaasTips: "配置太麻烦，想要立即使用",
+    SaasTips: "不知道密码是什么？这里获取！",
     TopTips:
       "😆 AIBoB首发优惠，超低价体验最新版多模态大模型！",
   },
