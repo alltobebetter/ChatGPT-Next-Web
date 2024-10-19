@@ -164,7 +164,6 @@ function TopBanner() {
       onMouseLeave={handleMouseLeave}
     >
       <div className={`${styles["top-banner-inner"]} no-dark`}>
-        <Logo className={styles["top-banner-logo"]}></Logo>
         <span>
           {Locale.Auth.TopTips}
           <a
