@@ -157,7 +157,7 @@ export function MaskConfig(props: {
           <input
             aria-label={Locale.Mask.Config.HideContext.Title}
             type="checkbox"
-            checked={props.mask.hideContext ?? true}
+            checked={props.mask.hideContext}
             onChange={(e) => {
               props.updateMask((mask) => {
                 mask.hideContext = e.currentTarget.checked;
