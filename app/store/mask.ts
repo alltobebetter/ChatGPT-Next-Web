@@ -11,7 +11,7 @@ export type Mask = {
   createdAt: number;
   avatar: string;
   name: string;
-  hideContext: boolean;
+  hideContext?: boolean;
   context: ChatMessage[];
   syncGlobalConfig?: boolean;
   modelConfig: ModelConfig;
@@ -39,7 +39,6 @@ export const createEmptyMask = () =>
     name: DEFAULT_TOPIC,
     context: [],
     syncGlobalConfig: true, // use global config as default
-    hideContext: true, // 添加这一行，设置默认值为 true
     modelConfig: { ...useAppConfig.getState().modelConfig },
     lang: getLang(),
     builtin: false,
