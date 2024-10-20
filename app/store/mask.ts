@@ -11,7 +11,7 @@ export type Mask = {
   createdAt: number;
   avatar: string;
   name: string;
-  hideContext: true;
+  hideContext?: boolean;
   context: ChatMessage[];
   syncGlobalConfig?: boolean;
   modelConfig: ModelConfig;
