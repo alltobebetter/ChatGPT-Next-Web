@@ -10,7 +10,7 @@ import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
 const serverConfig = getServerSideConfig();
 
 export const metadata: Metadata = {
-  title: "AIBoB | 下一代AI交互",
+  title: "AIBoB - 下一代AI交互",
   description: "编程 / 画图 / 视频 / 识图 / 文件 🍩",
   appleWebApp: {
     title: "aibob",
