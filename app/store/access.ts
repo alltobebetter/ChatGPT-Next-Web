@@ -1,125 +1,52 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { DEFAULT_OPENAI_URL, DEFAULT_GOOGLE_URL, DEFAULT_ANTHROPIC_URL, DEFAULT_BAIDU_URL, DEFAULT_BYTEDANCE_URL, DEFAULT_ALIBABA_URL, DEFAULT_TENCENT_URL, DEFAULT_MOONSHOT_URL, DEFAULT_IFLYTEK_URL, DEFAULT_STABILITY_URL, ServiceProvider } from "../constant";
-import { GoogleSafetySettingsThreshold } from "../client/platforms/google";
+import {
+  GoogleSafetySettingsThreshold,
+  ServiceProvider,
+  StoreKey,
+  ApiPath,
+  OPENAI_BASE_URL,
+  ANTHROPIC_BASE_URL,
+  GEMINI_BASE_URL,
+  BAIDU_BASE_URL,
+  BYTEDANCE_BASE_URL,
+  ALIBABA_BASE_URL,
+  TENCENT_BASE_URL,
+  MOONSHOT_BASE_URL,
+  STABILITY_BASE_URL,
+  IFLYTEK_BASE_URL,
+} from "../constant";
+import { getHeaders } from "../client/api";
+import { getClientConfig } from "../config/client";
+import { createPersistStore } from "../utils/store";
+import { ensure } from "../utils/clone";
+import { DEFAULT_CONFIG } from "./config";
 
-export interface AccessControlStore {
-  accessCode: string;
-  token: string;
-  needCode: boolean;
-  hideUserApiKey: boolean;
-  hideBalanceQuery: boolean;
-  disableGPT4: boolean;
-  hideGptName: boolean;
-  disableFastLink: boolean;
-  customModels: string;
-  defaultModel: string;
+let fetchState = 0; // 0 not fetch, 1 fetching, 2 done
 
-  provider: ServiceProvider;
+const isApp = getClientConfig()?.buildMode === "export";
 
-  // openai
-  openaiUrl: string;
-  openaiApiKey: string;
+const DEFAULT_OPENAI_URL = isApp ? OPENAI_BASE_URL : ApiPath.OpenAI;
 
-  // azure
-  azureUrl: string;
-  azureApiKey: string;
-  azureApiVersion: string;
+const DEFAULT_GOOGLE_URL = isApp ? GEMINI_BASE_URL : ApiPath.Google;
 
-  // google ai studio
-  googleUrl: string;
-  googleApiKey: string;
-  googleApiVersion: string;
-  googleSafetySettings: GoogleSafetySettingsThreshold;
+const DEFAULT_ANTHROPIC_URL = isApp ? ANTHROPIC_BASE_URL : ApiPath.Anthropic;
 
-  // anthropic
-  anthropicUrl: string;
-  anthropicApiKey: string;
-  anthropicApiVersion: string;
+const DEFAULT_BAIDU_URL = isApp ? BAIDU_BASE_URL : ApiPath.Baidu;
 
-  // baidu
-  baiduUrl: string;
-  baiduApiKey: string;
-  baiduSecretKey: string;
+const DEFAULT_BYTEDANCE_URL = isApp ? BYTEDANCE_BASE_URL : ApiPath.ByteDance;
 
-  // bytedance
-  bytedanceUrl: string;
-  bytedanceApiKey: string;
+const DEFAULT_ALIBABA_URL = isApp ? ALIBABA_BASE_URL : ApiPath.Alibaba;
 
-  // alibaba
-  alibabaUrl: string;
-  alibabaApiKey: string;
+const DEFAULT_TENCENT_URL = isApp ? TENCENT_BASE_URL : ApiPath.Tencent;
 
-  // moonshot
-  moonshotUrl: string;
-  moonshotApiKey: string;
+const DEFAULT_MOONSHOT_URL = isApp ? MOONSHOT_BASE_URL : ApiPath.Moonshot;
 
-  //stability
-  stabilityUrl: string;
-  stabilityApiKey: string;
+const DEFAULT_STABILITY_URL = isApp ? STABILITY_BASE_URL : ApiPath.Stability;
 
-  // tencent
-  tencentUrl: string;
-  tencentSecretKey: string;
-  tencentSecretId: string;
-
-  // iflytek
-  iflytekUrl: string;
-  iflytekApiKey: string;
-  iflytekApiSecret: string;
-
-  // tts config
-  edgeTTSVoiceName: string;
-
-  hasEnteredAccessCode: boolean;
-
-  updateToken: (_: string) => void;
-  updateCode: (_: string) => void;
-  updateHasEnteredAccessCode: (_: boolean) => void;
-  updateOpenAIUrl: (_: string) => void;
-  updateOpenAIApiKey: (_: string) => void;
-  updateAzureUrl: (_: string) => void;
-  updateAzureApiKey: (_: string) => void;
-  updateAzureApiVersion: (_: string) => void;
-  updateGoogleUrl: (_: string) => void;
-  updateGoogleApiKey: (_: string) => void;
-  updateGoogleApiVersion: (_: string) => void;
-  updateGoogleSafetySettings: (_: GoogleSafetySettingsThreshold) => void;
-  updateAnthropicUrl: (_: string) => void;
-  updateAnthropicApiKey: (_: string) => void;
-  updateAnthropicApiVersion: (_: string) => void;
-  updateBaiduUrl: (_: string) => void;
-  updateBaiduApiKey: (_: string) => void;
-  updateBaiduSecretKey: (_: string) => void;
-  updateBytedanceUrl: (_: string) => void;
-  updateBytedanceApiKey: (_: string) => void;
-  updateAlibabaUrl: (_: string) => void;
-  updateAlibabaApiKey: (_: string) => void;
-  updateMoonshotUrl: (_: string) => void;
-  updateMoonshotApiKey: (_: string) => void;
-  updateStabilityUrl: (_: string) => void;
-  updateStabilityApiKey: (_: string) => void;
-  updateTencentUrl: (_: string) => void;
-  updateTencentSecretKey: (_: string) => void;
-  updateTencentSecretId: (_: string) => void;
-  updateIflytekUrl: (_: string) => void;
-  updateIflytekApiKey: (_: string) => void;
-  updateIflytekApiSecret: (_: string) => void;
-  updateEdgeTTSVoiceName: (_: string) => void;
-  updateProvider: (_: ServiceProvider) => void;
-}
+const DEFAULT_IFLYTEK_URL = isApp ? IFLYTEK_BASE_URL : ApiPath.Iflytek;
 
 const DEFAULT_ACCESS_STATE = {
   accessCode: "",
-  token: "",
-  needCode: true,
-  hideUserApiKey: false,
-  hideBalanceQuery: false,
-  disableGPT4: false,
-  hideGptName: false,
-  disableFastLink: false,
-  customModels: "",
-  defaultModel: "",
+  useCustomConfig: false,
 
   provider: ServiceProvider.OpenAI,
 
@@ -174,123 +101,142 @@ const DEFAULT_ACCESS_STATE = {
   iflytekApiKey: "",
   iflytekApiSecret: "",
 
+  // server config
+  needCode: true,
+  hideUserApiKey: false,
+  hideBalanceQuery: false,
+  disableGPT4: false,
+  disableFastLink: false,
+  customModels: "",
+  defaultModel: "",
+
   // tts config
   edgeTTSVoiceName: "zh-CN-YunxiNeural",
-
-  hasEnteredAccessCode: false,
 };
 
-export const useAccessStore = create<AccessControlStore>()(
-  persist(
-    (set, get) => ({
-      ...DEFAULT_ACCESS_STATE,
+export const useAccessStore = createPersistStore(
+  { ...DEFAULT_ACCESS_STATE },
 
-      updateToken(token: string) {
-        set((state) => ({ token }));
-      },
-      updateCode(code: string) {
-        set((state) => ({ accessCode: code }));
-      },
-      updateHasEnteredAccessCode(hasEntered: boolean) {
-        set((state) => ({ hasEnteredAccessCode: hasEntered }));
-      },
-      updateOpenAIUrl(url: string) {
-        set((state) => ({ openaiUrl: url }));
-      },
-      updateOpenAIApiKey(apiKey: string) {
-        set((state) => ({ openaiApiKey: apiKey }));
-      },
-      updateAzureUrl(url: string) {
-        set((state) => ({ azureUrl: url }));
-      },
-      updateAzureApiKey(apiKey: string) {
-        set((state) => ({ azureApiKey: apiKey }));
-      },
-      updateAzureApiVersion(apiVersion: string) {
-        set((state) => ({ azureApiVersion: apiVersion }));
-      },
-      updateGoogleUrl(url: string) {
-        set((state) => ({ googleUrl: url }));
-      },
-      updateGoogleApiKey(apiKey: string) {
-        set((state) => ({ googleApiKey: apiKey }));
-      },
-      updateGoogleApiVersion(apiVersion: string) {
-        set((state) => ({ googleApiVersion: apiVersion }));
-      },
-      updateGoogleSafetySettings(safetySettings: GoogleSafetySettingsThreshold) {
-        set((state) => ({ googleSafetySettings: safetySettings }));
-      },
-      updateAnthropicUrl(url: string) {
-        set((state) => ({ anthropicUrl: url }));
-      },
-      updateAnthropicApiKey(apiKey: string) {
-        set((state) => ({ anthropicApiKey: apiKey }));
-      },
-      updateAnthropicApiVersion(apiVersion: string) {
-        set((state) => ({ anthropicApiVersion: apiVersion }));
-      },
-      updateBaiduUrl(url: string) {
-        set((state) => ({ baiduUrl: url }));
-      },
-      updateBaiduApiKey(apiKey: string) {
-        set((state) => ({ baiduApiKey: apiKey }));
-      },
-      updateBaiduSecretKey(secretKey: string) {
-        set((state) => ({ baiduSecretKey: secretKey }));
-      },
-      updateBytedanceUrl(url: string) {
-        set((state) => ({ bytedanceUrl: url }));
-      },
-      updateBytedanceApiKey(apiKey: string) {
-        set((state) => ({ bytedanceApiKey: apiKey }));
-      },
-      updateAlibabaUrl(url: string) {
-        set((state) => ({ alibabaUrl: url }));
-      },
-      updateAlibabaApiKey(apiKey: string) {
-        set((state) => ({ alibabaApiKey: apiKey }));
-      },
-      updateMoonshotUrl(url: string) {
-        set((state) => ({ moonshotUrl: url }));
-      },
-      updateMoonshotApiKey(apiKey: string) {
-        set((state) => ({ moonshotApiKey: apiKey }));
-      },
-      updateStabilityUrl(url: string) {
-        set((state) => ({ stabilityUrl: url }));
-      },
-      updateStabilityApiKey(apiKey: string) {
-        set((state) => ({ stabilityApiKey: apiKey }));
-      },
-      updateTencentUrl(url: string) {
-        set((state) => ({ tencentUrl: url }));
-      },
-      updateTencentSecretKey(secretKey: string) {
-        set((state) => ({ tencentSecretKey: secretKey }));
-      },
-      updateTencentSecretId(secretId: string) {
-        set((state) => ({ tencentSecretId: secretId }));
-      },
-      updateIflytekUrl(url: string) {
-        set((state) => ({ iflytekUrl: url }));
-      },
-      updateIflytekApiKey(apiKey: string) {
-        set((state) => ({ iflytekApiKey: apiKey }));
-      },
-      updateIflytekApiSecret(apiSecret: string) {
-        set((state) => ({ iflytekApiSecret: apiSecret }));
-      },
-      updateEdgeTTSVoiceName(voiceName: string) {
-        set((state) => ({ edgeTTSVoiceName: voiceName }));
-      },
-      updateProvider(provider: ServiceProvider) {
-        set((state) => ({ provider: provider }));
-      },
-    }),
-    {
-      name: "access-store",
-      version: 1,
+  (set, get) => ({
+    enabledAccessControl() {
+      this.fetch();
+
+      return get().needCode;
     },
-  ),
+
+    edgeVoiceName() {
+      this.fetch();
+
+      return get().edgeTTSVoiceName;
+    },
+
+    isValidOpenAI() {
+      return ensure(get(), ["openaiApiKey"]);
+    },
+
+    isValidAzure() {
+      return ensure(get(), ["azureUrl", "azureApiKey", "azureApiVersion"]);
+    },
+
+    isValidGoogle() {
+      return ensure(get(), ["googleApiKey"]);
+    },
+
+    isValidAnthropic() {
+      return ensure(get(), ["anthropicApiKey"]);
+    },
+
+    isValidBaidu() {
+      return ensure(get(), ["baiduApiKey", "baiduSecretKey"]);
+    },
+
+    isValidByteDance() {
+      return ensure(get(), ["bytedanceApiKey"]);
+    },
+
+    isValidAlibaba() {
+      return ensure(get(), ["alibabaApiKey"]);
+    },
+
+    isValidTencent() {
+      return ensure(get(), ["tencentSecretKey", "tencentSecretId"]);
+    },
+
+    isValidMoonshot() {
+      return ensure(get(), ["moonshotApiKey"]);
+    },
+    isValidIflytek() {
+      return ensure(get(), ["iflytekApiKey"]);
+    },
+
+    isAuthorized() {
+      this.fetch();
+
+      // has token or has code or disabled access control
+      return (
+        this.isValidOpenAI() ||
+        this.isValidAzure() ||
+        this.isValidGoogle() ||
+        this.isValidAnthropic() ||
+        this.isValidBaidu() ||
+        this.isValidByteDance() ||
+        this.isValidAlibaba() ||
+        this.isValidTencent() ||
+        this.isValidMoonshot() ||
+        this.isValidIflytek() ||
+        !this.enabledAccessControl() ||
+        (this.enabledAccessControl() && ensure(get(), ["accessCode"]))
+      );
+    },
+    fetch() {
+      if (fetchState > 0 || getClientConfig()?.buildMode === "export") return;
+      fetchState = 1;
+      fetch("/api/config", {
+        method: "post",
+        body: null,
+        headers: {
+          ...getHeaders(),
+        },
+      })
+        .then((res) => res.json())
+        .then((res) => {
+          const defaultModel = res.defaultModel ?? "";
+          if (defaultModel !== "") {
+            const [model, providerName] = defaultModel.split("@");
+            DEFAULT_CONFIG.modelConfig.model = model;
+            DEFAULT_CONFIG.modelConfig.providerName = providerName;
+          }
+
+          return res;
+        })
+        .then((res: DangerConfig) => {
+          console.log("[Config] got config from server", res);
+          set(() => ({ ...res }));
+        })
+        .catch(() => {
+          console.error("[Config] failed to fetch config");
+        })
+        .finally(() => {
+          fetchState = 2;
+        });
+    },
+  }),
+  {
+    name: StoreKey.Access,
+    version: 2,
+    migrate(persistedState, version) {
+      if (version < 2) {
+        const state = persistedState as {
+          token: string;
+          openaiApiKey: string;
+          azureApiVersion: string;
+          googleApiKey: string;
+        };
+        state.openaiApiKey = state.token;
+        state.azureApiVersion = "2023-08-01-preview";
+      }
+
+      return persistedState as any;
+    },
+  },
 );
