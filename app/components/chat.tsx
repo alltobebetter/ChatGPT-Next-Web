@@ -937,8 +937,10 @@ function _Chat() {
   const [showExport, setShowExport] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [userInput, setUserInput] = useState(() => {
-    const params = new URLSearchParams(location.hash.split('?')[1]);
-    return params.get('q') || "";
+    // 正确解析 URL 参数
+    const hash = location.hash; // 例如: "#/chat?q=你好"
+    const searchParams = new URLSearchParams(hash.split('?')[1] || '');
+    return decodeURIComponent(searchParams.get('q') || "");
   });
   const [isLoading, setIsLoading] = useState(false);
   const { submitKey, shouldSubmit } = useSubmitHandler();
