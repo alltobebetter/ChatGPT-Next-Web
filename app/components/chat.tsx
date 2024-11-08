@@ -1,3 +1,4 @@
+
 import { useDebouncedCallback } from "use-debounce";
 import React, {
   useState,
@@ -95,7 +96,7 @@ import {
   showPrompt,
   showToast,
 } from "./ui-lib";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   CHAT_PAGE_SIZE,
   DEFAULT_TTS_ENGINE,
@@ -932,16 +933,11 @@ function _Chat() {
   const config = useAppConfig();
   const fontSize = config.fontSize;
   const fontFamily = config.fontFamily;
-  const location = useLocation();
 
   const [showExport, setShowExport] = useState(false);
+
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const [userInput, setUserInput] = useState(() => {
-    // 正确解析 URL 参数
-    const hash = location.hash; // 例如: "#/chat?q=你好"
-    const searchParams = new URLSearchParams(hash.split('?')[1] || '');
-    return decodeURIComponent(searchParams.get('q') || "");
-  });
+  const [userInput, setUserInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { submitKey, shouldSubmit } = useSubmitHandler();
   const scrollRef = useRef<HTMLDivElement>(null);
