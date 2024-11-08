@@ -1,4 +1,3 @@
-
 import { useDebouncedCallback } from "use-debounce";
 import React, {
   useState,
@@ -933,11 +932,19 @@ function _Chat() {
   const config = useAppConfig();
   const fontSize = config.fontSize;
   const fontFamily = config.fontFamily;
-
   const [showExport, setShowExport] = useState(false);
-
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const [userInput, setUserInput] = useState("");
+  
+  // 添加获取URL参数的逻辑
+  const getQueryParam = () => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get("q") || "";
+    }
+    return "";
+  };
+  
+  const [userInput, setUserInput] = useState(getQueryParam());
   const [isLoading, setIsLoading] = useState(false);
   const { submitKey, shouldSubmit } = useSubmitHandler();
   const scrollRef = useRef<HTMLDivElement>(null);
