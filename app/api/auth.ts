@@ -1,37 +1,24 @@
 import { NextRequest } from "next/server";
-import { getServerSideConfig } from "../config/server";
+import { getServerSideConfig } from "@/app/config/server";
 import md5 from "spark-md5";
-import { ACCESS_CODE_PREFIX, ModelProvider, FREE_MODELS } from "../constant";
+import { ModelProvider } from "@/app/constant";
+import { FREE_MODELS } from "@/app/constant";
+import { getIP } from "@/app/api/common";
 
-function getIP(req: NextRequest) {
-  let ip = req.ip ?? req.headers.get("x-real-ip");
-  const forwardedFor = req.headers.get("x-forwarded-for");
-
-  if (!ip && forwardedFor) {
-    ip = forwardedFor.split(",").at(0) ?? "";
-  }
-
-  return ip;
-}
-
-function parseApiKey(bearToken: string) {
-  const token = bearToken.trim().replaceAll("Bearer ", "").trim();
-  const isApiKey = !token.startsWith(ACCESS_CODE_PREFIX);
+function parseApiKey(token: string) {
+  const parts = token.trim().split(" ").filter(Boolean);
+  const isBearer = parts[0]?.toLowerCase() === "bearer";
+  const apiKey = isBearer ? parts[1] : parts[0];
+  const accessCode = apiKey?.trim() ?? "";
 
   return {
-    accessCode: isApiKey ? "" : token.slice(ACCESS_CODE_PREFIX.length),
-    apiKey: isApiKey ? token : "",
+    accessCode,
+    apiKey,
   };
 }
 
-export async function auth(req: NextRequest, modelProvider: ModelProvider) {
+export function auth(req: NextRequest, modelProvider: ModelProvider) {
   const authToken = req.headers.get("Authorization") ?? "";
-  const recaptchaToken = req.headers.get("Recaptcha-Token") ?? "";
-
-  console.log("[Auth] Start auth check");
-  console.log("[Auth] Recaptcha token:", recaptchaToken ? "存在" : "不存在");
-
-  // check if it is openai api key or user token
   const { accessCode, apiKey } = parseApiKey(authToken);
   const hashedCode = md5.hash(accessCode ?? "").trim();
 
@@ -42,42 +29,8 @@ export async function auth(req: NextRequest, modelProvider: ModelProvider) {
   console.log("[User IP] ", getIP(req));
   console.log("[Time] ", new Date().toLocaleString());
 
-  // 验证 ReCaptcha (可选)
-  if (process.env.RECAPTCHA_SECRET_KEY && recaptchaToken) {
-    console.log("[ReCaptcha] 开始验证");
-    try {
-      const recaptchaRes = await fetch(
-        `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`,
-        { method: 'POST' }
-      );
-
-      const result = await recaptchaRes.json();
-      console.log("[ReCaptcha] 验证结果:", result);
-      
-      const minScore = Number(process.env.RECAPTCHA_MIN_SCORE || 0.5);
-      console.log("[ReCaptcha] 最低分数:", minScore);
-      console.log("[ReCaptcha] 实际分数:", result.score);
-
-      if (!result.success || result.score < minScore) {
-        console.log("[ReCaptcha] 验证失败");
-        return {
-          error: true,
-          msg: "人机验证失败,请重试",
-        };
-      }
-      console.log("[ReCaptcha] 验证成功");
-    } catch (err) {
-      console.error("[ReCaptcha] 验证出错:", err);
-      // 如果验证失败,继续处理请求
-    }
-  } else {
-    console.log("[ReCaptcha] 跳过验证: SECRET_KEY或Token不存在");
-  }
-
-  // 获取当前请求的模型名称
   const requestedModel = req.headers.get("Model") ?? "";
   
-  // 检查是否是受限模型且没有访问码
   if (!FREE_MODELS.includes(requestedModel) && 
       serverConfig.needCode && 
       !serverConfig.codes.has(hashedCode) && 
@@ -100,8 +53,10 @@ export async function auth(req: NextRequest, modelProvider: ModelProvider) {
     const serverConfig = getServerSideConfig();
 
     let systemApiKey: string | undefined;
-
     switch (modelProvider) {
+      case ModelProvider.Stability:
+        systemApiKey = serverConfig.stabilityApiKey;
+        break;
       case ModelProvider.GeminiPro:
         systemApiKey = serverConfig.googleApiKey;
         break;
@@ -141,15 +96,20 @@ export async function auth(req: NextRequest, modelProvider: ModelProvider) {
 
     if (systemApiKey) {
       console.log("[Auth] use system api key");
-      req.headers.set("Authorization", `Bearer ${systemApiKey}`);
-    } else {
-      console.log("[Auth] admin did not provide an api key");
+      return {
+        error: false,
+        apiKey: systemApiKey,
+      };
     }
-  } else {
-    console.log("[Auth] use user api key");
+
+    return {
+      error: true,
+      msg: "no valid api key",
+    };
   }
 
   return {
     error: false,
+    apiKey: apiKey,
   };
 }
