@@ -24,43 +24,12 @@ function parseApiKey(bearToken: string) {
   };
 }
 
-async function verifyRecaptcha(token: string) {
-  const secret = process.env.RECAPTCHA_SECRET_KEY;
-  const response = await fetch(
-    `https://www.google.com/recaptcha/api/siteverify?secret=${secret}&response=${token}`,
-    { method: "POST" }
-  );
-  const data = await response.json();
-  return data;
-}
-
-export async function auth(req: NextRequest, modelProvider: ModelProvider) {
-  // 获取 reCAPTCHA token
-  const recaptchaToken = req.headers.get("X-Recaptcha-Token");
-  
-  if (recaptchaToken) {
-    const recaptchaResult = await verifyRecaptcha(recaptchaToken);
-    
-    // 根据分数判断
-    if (recaptchaResult.score < 0.3) {
-      return {
-        error: true,
-        msg: "人机验证失败,请刷新页面重试",
-      };
-    }
-    
-    // 分数在0.3-0.7之间,需要显示交互式验证
-    if (recaptchaResult.score < 0.7) {
-      return {
-        error: true,
-        needCaptcha: true,
-        msg: "需要进行人机验证",
-      };
-    }
-  }
-
+export function auth(req: NextRequest, modelProvider: ModelProvider) {
   const authToken = req.headers.get("Authorization") ?? "";
+
+  // check if it is openai api key or user token
   const { accessCode, apiKey } = parseApiKey(authToken);
+
   const hashedCode = md5.hash(accessCode ?? "").trim();
 
   const serverConfig = getServerSideConfig();
