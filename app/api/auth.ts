@@ -1,21 +1,26 @@
-把你最改动后修改后的auth.ts的完整代码给我，这是目前的代码，getip函数不要删除
-
 import { NextRequest } from "next/server";
-import { getServerSideConfig } from "@/app/config/server";
+import { getServerSideConfig } from "../config/server";
 import md5 from "spark-md5";
-import { ModelProvider } from "@/app/constant";
-import { FREE_MODELS } from "@/app/constant";
-import { getIP } from "@/app/api/common";
+import { ACCESS_CODE_PREFIX, ModelProvider, FREE_MODELS } from "../constant";
 
-function parseApiKey(token: string) {
-  const parts = token.trim().split(" ").filter(Boolean);
-  const isBearer = parts[0]?.toLowerCase() === "bearer";
-  const apiKey = isBearer ? parts[1] : parts[0];
-  const accessCode = apiKey?.trim() ?? "";
+function getIP(req: NextRequest) {
+  let ip = req.ip ?? req.headers.get("x-real-ip");
+  const forwardedFor = req.headers.get("x-forwarded-for");
+
+  if (!ip && forwardedFor) {
+    ip = forwardedFor.split(",").at(0) ?? "";
+  }
+
+  return ip;
+}
+
+function parseApiKey(bearToken: string) {
+  const token = bearToken.trim().replaceAll("Bearer ", "").trim();
+  const isApiKey = !token.startsWith(ACCESS_CODE_PREFIX);
 
   return {
-    accessCode,
-    apiKey,
+    accessCode: isApiKey ? "" : token.slice(ACCESS_CODE_PREFIX.length),
+    apiKey: isApiKey ? token : "",
   };
 }
 
