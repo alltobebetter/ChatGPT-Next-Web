@@ -27,9 +27,20 @@ function parseApiKey(bearToken: string) {
 export async function auth(req: NextRequest, modelProvider: ModelProvider) {
   const authToken = req.headers.get("Authorization") ?? "";
   const recaptchaToken = req.headers.get("Recaptcha-Token") ?? "";
-  
-  // 验证 ReCaptcha
-  if (process.env.RECAPTCHA_SECRET_KEY) {
+
+  // check if it is openai api key or user token
+  const { accessCode, apiKey } = parseApiKey(authToken);
+  const hashedCode = md5.hash(accessCode ?? "").trim();
+
+  const serverConfig = getServerSideConfig();
+  console.log("[Auth] allowed hashed codes: ", [...serverConfig.codes]);
+  console.log("[Auth] got access code:", accessCode);
+  console.log("[Auth] hashed access code:", hashedCode);
+  console.log("[User IP] ", getIP(req));
+  console.log("[Time] ", new Date().toLocaleString());
+
+  // 验证 ReCaptcha (可选)
+  if (process.env.RECAPTCHA_SECRET_KEY && recaptchaToken) {
     try {
       const recaptchaRes = await fetch(
         `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`,
@@ -47,20 +58,9 @@ export async function auth(req: NextRequest, modelProvider: ModelProvider) {
       }
     } catch (err) {
       console.error("[ReCaptcha] 验证失败:", err);
+      // 如果验证失败,继续处理请求
     }
   }
-
-  // 原有的验证逻辑
-  const { accessCode, apiKey } = parseApiKey(authToken);
-
-  const hashedCode = md5.hash(accessCode ?? "").trim();
-
-  const serverConfig = getServerSideConfig();
-  console.log("[Auth] allowed hashed codes: ", [...serverConfig.codes]);
-  console.log("[Auth] got access code:", accessCode);
-  console.log("[Auth] hashed access code:", hashedCode);
-  console.log("[User IP] ", getIP(req));
-  console.log("[Time] ", new Date().toLocaleString());
 
   // 获取当前请求的模型名称
   const requestedModel = req.headers.get("Model") ?? "";
@@ -90,9 +90,6 @@ export async function auth(req: NextRequest, modelProvider: ModelProvider) {
     let systemApiKey: string | undefined;
 
     switch (modelProvider) {
-      case ModelProvider.Stability:
-        systemApiKey = serverConfig.stabilityApiKey;
-        break;
       case ModelProvider.GeminiPro:
         systemApiKey = serverConfig.googleApiKey;
         break;
