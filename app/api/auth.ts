@@ -24,11 +24,39 @@ function parseApiKey(bearToken: string) {
   };
 }
 
+import { NextRequest } from "next/server";
+import { ModelProvider } from "./types";
+import { getServerSideConfig } from "./config";
+import md5 from "spark-md5";
+import { getIP } from "./utils";
+import { FREE_MODELS } from "./constants";
+
+async function verifyRecaptcha(token: string) {
+  try {
+    const recaptchaRes = await fetch(
+      `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`,
+      { method: 'POST' }
+    );
+
+    const result = await recaptchaRes.json();
+    const minScore = Number(process.env.RECAPTCHA_MIN_SCORE || 0.5);
+
+    return {
+      success: result.success && result.score >= minScore,
+      score: result.score
+    };
+  } catch (error) {
+    console.error("ReCaptcha verification failed:", error);
+    return {
+      success: false,
+      score: 0
+    };
+  }
+}
+
 export async function auth(req: NextRequest, modelProvider: ModelProvider) {
-  const authToken = req.headers.get("Authorization") ?? "";
-  const recaptchaToken = req.headers.get("Recaptcha-Token");
-  
   // 验证 ReCaptcha
+  const recaptchaToken = req.headers.get("Recaptcha-Token");
   if (!recaptchaToken) {
     return {
       error: true,
@@ -36,34 +64,20 @@ export async function auth(req: NextRequest, modelProvider: ModelProvider) {
     };
   }
 
-  try {
-    const verifyResult = await fetch(
-      `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`,
-      { method: 'POST' }
-    );
-    
-    const result = await verifyResult.json();
-    const minScore = process.env.RECAPTCHA_MIN_SCORE || 0.5;
-    
-    if (!result.success || result.score < minScore) {
-      return {
-        error: true,
-        msg: "人机验证失败,请重试",
-      };
-    }
-  } catch (error) {
-    console.error("ReCaptcha verification failed:", error);
+  const { success } = await verifyRecaptcha(recaptchaToken);
+  if (!success) {
     return {
       error: true,
-      msg: "人机验证服务异常,请稍后重试",
+      msg: "人机验证失败,请重试",
     };
   }
 
   // 原有的验证逻辑
+  const authToken = req.headers.get("Authorization") ?? "";
   const { accessCode, apiKey } = parseApiKey(authToken);
   const hashedCode = md5.hash(accessCode ?? "").trim();
   const serverConfig = getServerSideConfig();
-  
+
   console.log("[Auth] allowed hashed codes: ", [...serverConfig.codes]);
   console.log("[Auth] got access code:", accessCode);
   console.log("[Auth] hashed access code:", hashedCode);
@@ -88,6 +102,11 @@ export async function auth(req: NextRequest, modelProvider: ModelProvider) {
       msg: "you are not allowed to access with your own api key",
     };
   }
+
+  return {
+    error: false
+  };
+}
 
   if (!apiKey) {
     const serverConfig = getServerSideConfig();
