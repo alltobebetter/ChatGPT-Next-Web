@@ -1,4 +1,3 @@
-import { showToast } from "../components/ui-lib";
 import { useDebouncedCallback } from "use-debounce";
 import React, {
   useState,
@@ -926,24 +925,6 @@ export function ShortcutKeyModal(props: { onClose: () => void }) {
 }
 
 function _Chat() {
-  const [lastMessageTime, setLastMessageTime] = useState<number>(0);
-  
-  // 添加消息间隔检查函数
-  const checkMessageInterval = () => {
-    const now = Date.now();
-    const interval = now - lastMessageTime;
-    return interval >= 5000; // 5秒限制
-  };
-
-  // 修改 doSubmit 函数
-  const doSubmit = async (userInput: string) => {
-    if (!checkMessageInterval()) {
-      showToast("请等待5秒后再发送消息");
-      return;
-    }
-    
-    setLastMessageTime(Date.now());
-    const matchCommand = chatCommands.match(userInput);
   type RenderMessage = ChatMessage & { preview?: boolean };
 
   const chatStore = useChatStore();
@@ -951,19 +932,11 @@ function _Chat() {
   const config = useAppConfig();
   const fontSize = config.fontSize;
   const fontFamily = config.fontFamily;
+
   const [showExport, setShowExport] = useState(false);
+
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  
-  // 添加获取URL参数的逻辑
-  const getQueryParam = () => {
-    if (typeof window !== "undefined") {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get("q") || "";
-    }
-    return "";
-  };
-  
-  const [userInput, setUserInput] = useState(getQueryParam());
+  const [userInput, setUserInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { submitKey, shouldSubmit } = useSubmitHandler();
   const scrollRef = useRef<HTMLDivElement>(null);
