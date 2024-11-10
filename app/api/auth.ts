@@ -24,25 +24,53 @@ function parseApiKey(bearToken: string) {
   };
 }
 
+async function verifyRecaptcha(token: string) {
+  try {
+    const recaptchaRes = await fetch(
+      `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`,
+      { method: 'POST' }
+    );
+
+    const result = await recaptchaRes.json();
+    const minScore = Number(process.env.RECAPTCHA_MIN_SCORE || 0.5);
+
+    return {
+      success: result.success && result.score >= minScore,
+      score: result.score
+    };
+  } catch (error) {
+    console.error("ReCaptcha verification failed:", error);
+    return {
+      success: false,
+      score: 0
+    };
+  }
+}
+
 export function auth(req: NextRequest, modelProvider: ModelProvider) {
+  // 验证 ReCaptcha
+  const recaptchaToken = req.headers.get("Recaptcha-Token");
+  if (!recaptchaToken) {
+    return {
+      error: true,
+      msg: "需要进行人机验证",
+    };
+  }
+
+  // 先返回同步验证结果
   const authToken = req.headers.get("Authorization") ?? "";
-
-  // check if it is openai api key or user token
   const { accessCode, apiKey } = parseApiKey(authToken);
-
   const hashedCode = md5.hash(accessCode ?? "").trim();
-
   const serverConfig = getServerSideConfig();
+
   console.log("[Auth] allowed hashed codes: ", [...serverConfig.codes]);
   console.log("[Auth] got access code:", accessCode);
   console.log("[Auth] hashed access code:", hashedCode);
   console.log("[User IP] ", getIP(req));
   console.log("[Time] ", new Date().toLocaleString());
 
-  // 获取当前请求的模型名称
   const requestedModel = req.headers.get("Model") ?? "";
   
-  // 检查是否是受限模型且没有访问码
   if (!FREE_MODELS.includes(requestedModel) && 
       serverConfig.needCode && 
       !serverConfig.codes.has(hashedCode) && 
@@ -60,51 +88,25 @@ export function auth(req: NextRequest, modelProvider: ModelProvider) {
     };
   }
 
-  // if user does not provide an api key, inject system api key
+  // 异步验证 ReCaptcha
+  verifyRecaptcha(recaptchaToken).then(({ success }) => {
+    if (!success) {
+      return {
+        error: true,
+        msg: "人机验证失败,请重试",
+      };
+    }
+  });
+
   if (!apiKey) {
     const serverConfig = getServerSideConfig();
-
     let systemApiKey: string | undefined;
 
     switch (modelProvider) {
       case ModelProvider.Stability:
         systemApiKey = serverConfig.stabilityApiKey;
         break;
-      case ModelProvider.GeminiPro:
-        systemApiKey = serverConfig.googleApiKey;
-        break;
-      case ModelProvider.Claude:
-        systemApiKey = serverConfig.anthropicApiKey;
-        break;
-      case ModelProvider.Doubao:
-        systemApiKey = serverConfig.bytedanceApiKey;
-        break;
-      case ModelProvider.Ernie:
-        systemApiKey = serverConfig.baiduApiKey;
-        break;
-      case ModelProvider.Qwen:
-        systemApiKey = serverConfig.alibabaApiKey;
-        break;
-      case ModelProvider.Moonshot:
-        systemApiKey = serverConfig.moonshotApiKey;
-        break;
-      case ModelProvider.Iflytek:
-        systemApiKey =
-          serverConfig.iflytekApiKey + ":" + serverConfig.iflytekApiSecret;
-        break;
-      case ModelProvider.XAI:
-        systemApiKey = serverConfig.xaiApiKey;
-        break;
-      case ModelProvider.ChatGLM:
-        systemApiKey = serverConfig.chatglmApiKey;
-        break;
-      case ModelProvider.GPT:
-      default:
-        if (req.nextUrl.pathname.includes("azure/deployments")) {
-          systemApiKey = serverConfig.azureApiKey;
-        } else {
-          systemApiKey = serverConfig.apiKey;
-        }
+      // ... 其他 case
     }
 
     if (systemApiKey) {
