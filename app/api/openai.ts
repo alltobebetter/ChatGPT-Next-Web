@@ -55,6 +55,12 @@ export async function handle(
   }
 
   try {
+    // 在请求头中添加 ReCaptcha token
+    const recaptchaToken = req.headers.get("Recaptcha-Token");
+    if (recaptchaToken) {
+      req.headers.set("Recaptcha-Token", recaptchaToken);
+    }
+    
     const response = await requestOpenai(req);
 
     // list models
