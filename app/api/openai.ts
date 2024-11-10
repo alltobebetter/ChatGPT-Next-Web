@@ -29,15 +29,12 @@ export async function handle(
   console.log("[OpenAI Route] 开始处理请求");
   console.log("[OpenAI Route] 请求路径:", params.path);
   console.log("[OpenAI Route] 请求方法:", req.method);
-  console.log("[OpenAI Route] 请求头:", Object.fromEntries(req.headers.entries()));
 
   if (req.method === "OPTIONS") {
-    console.log("[OpenAI Route] OPTIONS请求,直接返回");
     return NextResponse.json({ body: "OK" }, { status: 200 });
   }
 
   const subpath = params.path.join("/");
-  console.log("[OpenAI Route] 子路径:", subpath);
 
   if (!ALLOWED_PATH.has(subpath)) {
     console.log("[OpenAI Route] 禁止访问路径:", subpath);
@@ -52,61 +49,60 @@ export async function handle(
     );
   }
 
-  console.log("[OpenAI Route] 开始验证");
-  const authResult = await auth(req, ModelProvider.GPT);
-  console.log("[OpenAI Route] 验证结果:", authResult);
+  // 检查 ReCaptcha 配置
+  const recaptchaSecretKey = process.env.RECAPTCHA_SECRET_KEY;
+  const recaptchaToken = req.headers.get("Recaptcha-Token");
 
+  console.log("[OpenAI Route] ReCaptcha 配置检查:");
+  console.log("- Secret Key:", recaptchaSecretKey ? "已配置" : "未配置");
+  console.log("- Token:", recaptchaToken ? "已提供" : "未提供");
+
+  // 只有当 SECRET_KEY 和 Token 都存在时才进行验证
+  if (recaptchaSecretKey && recaptchaToken) {
+    try {
+      const verifyUrl = `https://www.google.com/recaptcha/api/siteverify`;
+      const verifyRes = await fetch(verifyUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: `secret=${recaptchaSecretKey}&response=${recaptchaToken}`,
+      });
+
+      const verifyResult = await verifyRes.json();
+      console.log("[OpenAI Route] ReCaptcha 验证结果:", verifyResult);
+
+      if (!verifyResult.success) {
+        return NextResponse.json({
+          error: true,
+          msg: "ReCaptcha 验证失败",
+        }, { status: 403 });
+      }
+    } catch (err) {
+      console.error("[OpenAI Route] ReCaptcha 验证出错:", err);
+      return NextResponse.json({
+        error: true,
+        msg: "ReCaptcha 验证过程出错",
+      }, { status: 500 });
+    }
+  } else {
+    console.log("[OpenAI Route] 跳过 ReCaptcha 验证 - 配置不完整");
+  }
+
+  const authResult = await auth(req, ModelProvider.GPT);
   if (authResult.error) {
-    console.log("[OpenAI Route] 验证失败:", authResult.msg);
     return NextResponse.json(authResult, {
       status: 401,
     });
   }
 
   try {
-    // 检查环境变量
-    console.log("[OpenAI Route] 检查ReCaptcha配置");
-    console.log("[OpenAI Route] RECAPTCHA_SECRET_KEY:", 
-      process.env.RECAPTCHA_SECRET_KEY ? "已设置" : "未设置");
-    
-    const recaptchaToken = req.headers.get("Recaptcha-Token");
-    console.log("[OpenAI Route] ReCaptcha Token:", 
-      recaptchaToken ? "存在" : "不存在");
-
-    // 验证 ReCaptcha Token
-    if (process.env.RECAPTCHA_SECRET_KEY && recaptchaToken) {
-      console.log("[OpenAI Route] 开始验证ReCaptcha");
-      try {
-        const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`;
-        const verifyRes = await fetch(verifyUrl, {
-          method: "POST",
-        });
-        const verifyResult = await verifyRes.json();
-        console.log("[OpenAI Route] ReCaptcha验证结果:", verifyResult);
-        
-        if (!verifyResult.success) {
-          return NextResponse.json({
-            error: true,
-            msg: "ReCaptcha验证失败",
-          }, { status: 403 });
-        }
-      } catch (err) {
-        console.error("[OpenAI Route] ReCaptcha验证出错:", err);
-      }
-    } else {
-      console.log("[OpenAI Route] 跳过ReCaptcha验证");
-    }
-
-    console.log("[OpenAI Route] 发送请求到OpenAI");
     const response = await requestOpenai(req);
-    console.log("[OpenAI Route] OpenAI响应状态:", response.status);
+    console.log("[OpenAI Route] OpenAI 响应状态:", response.status);
 
-    // list models
     if (subpath === OpenaiPath.ListModelPath && response.status === 200) {
-      console.log("[OpenAI Route] 获取模型列表");
       const resJson = (await response.json()) as OpenAIListModelResponse;
       const availableModels = getModels(resJson);
-      console.log("[OpenAI Route] 可用模型:", availableModels);
       return NextResponse.json(availableModels, {
         status: response.status,
       });
@@ -114,7 +110,7 @@ export async function handle(
 
     return response;
   } catch (e) {
-    console.error("[OpenAI Route] 发生错误:", e);
+    console.error("[OpenAI Route] 请求出错:", e);
     return NextResponse.json(prettyObject(e));
   }
 }
