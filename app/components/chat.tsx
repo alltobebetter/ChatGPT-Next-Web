@@ -928,7 +928,7 @@ export function ShortcutKeyModal(props: { onClose: () => void }) {
 function _Chat() {
   const [lastMessageTime, setLastMessageTime] = useState<number>(0);
   
-  // 添加检查函数
+  // 添加消息间隔检查函数
   const checkMessageInterval = () => {
     const now = Date.now();
     const interval = now - lastMessageTime;
@@ -941,6 +941,9 @@ function _Chat() {
       showToast("请等待5秒后再发送消息");
       return;
     }
+    
+    setLastMessageTime(Date.now());
+    const matchCommand = chatCommands.match(userInput);
   type RenderMessage = ChatMessage & { preview?: boolean };
 
   const chatStore = useChatStore();
