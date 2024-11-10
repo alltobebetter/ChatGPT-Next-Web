@@ -1040,7 +1040,7 @@ function _Chat() {
     
     if (timeSinceLastMessage < minInterval) {
       const remainingTime = Math.ceil((minInterval - timeSinceLastMessage) / 1000);
-      showToast(`请等待 ${remainingTime} 秒后再发送消息`);
+      showToast(`您的发送速度太快了，请 ${remainingTime} 秒后再发送消息吧！`);
       return;
     }
     
