@@ -24,61 +24,25 @@ function parseApiKey(bearToken: string) {
   };
 }
 
-async function verifyRecaptcha(token: string) {
-  try {
-    const recaptchaRes = await fetch(
-      `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`,
-      { method: 'POST' }
-    );
-
-    const result = await recaptchaRes.json();
-    const minScore = Number(process.env.RECAPTCHA_MIN_SCORE || 0.5);
-
-    return {
-      success: result.success && result.score >= minScore,
-      score: result.score
-    };
-  } catch (error) {
-    console.error("ReCaptcha verification failed:", error);
-    return {
-      success: false,
-      score: 0
-    };
-  }
-}
-
-export async function auth(req: NextRequest, modelProvider: ModelProvider) {
-  // 验证 ReCaptcha
-  const recaptchaToken = req.headers.get("Recaptcha-Token");
-  if (!recaptchaToken) {
-    return {
-      error: true,
-      msg: "需要进行人机验证",
-    };
-  }
-
-  const { success } = await verifyRecaptcha(recaptchaToken);
-  if (!success) {
-    return {
-      error: true,
-      msg: "人机验证失败,请重试",
-    };
-  }
-
-  // 原有的验证逻辑
+export function auth(req: NextRequest, modelProvider: ModelProvider) {
   const authToken = req.headers.get("Authorization") ?? "";
-  const { accessCode, apiKey } = parseApiKey(authToken);
-  const hashedCode = md5.hash(accessCode ?? "").trim();
-  const serverConfig = getServerSideConfig();
 
+  // check if it is openai api key or user token
+  const { accessCode, apiKey } = parseApiKey(authToken);
+
+  const hashedCode = md5.hash(accessCode ?? "").trim();
+
+  const serverConfig = getServerSideConfig();
   console.log("[Auth] allowed hashed codes: ", [...serverConfig.codes]);
   console.log("[Auth] got access code:", accessCode);
   console.log("[Auth] hashed access code:", hashedCode);
   console.log("[User IP] ", getIP(req));
   console.log("[Time] ", new Date().toLocaleString());
 
+  // 获取当前请求的模型名称
   const requestedModel = req.headers.get("Model") ?? "";
   
+  // 检查是否是受限模型且没有访问码
   if (!FREE_MODELS.includes(requestedModel) && 
       serverConfig.needCode && 
       !serverConfig.codes.has(hashedCode) && 
@@ -96,8 +60,10 @@ export async function auth(req: NextRequest, modelProvider: ModelProvider) {
     };
   }
 
+  // if user does not provide an api key, inject system api key
   if (!apiKey) {
     const serverConfig = getServerSideConfig();
+
     let systemApiKey: string | undefined;
 
     switch (modelProvider) {
