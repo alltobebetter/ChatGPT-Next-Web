@@ -1,3 +1,4 @@
+import { showToast } from "../components/ui-lib";
 import { useDebouncedCallback } from "use-debounce";
 import React, {
   useState,
@@ -925,6 +926,21 @@ export function ShortcutKeyModal(props: { onClose: () => void }) {
 }
 
 function _Chat() {
+  const [lastMessageTime, setLastMessageTime] = useState<number>(0);
+  
+  // 添加检查函数
+  const checkMessageInterval = () => {
+    const now = Date.now();
+    const interval = now - lastMessageTime;
+    return interval >= 5000; // 5秒限制
+  };
+
+  // 修改 doSubmit 函数
+  const doSubmit = async (userInput: string) => {
+    if (!checkMessageInterval()) {
+      showToast("请等待5秒后再发送消息");
+      return;
+    }
   type RenderMessage = ChatMessage & { preview?: boolean };
 
   const chatStore = useChatStore();
