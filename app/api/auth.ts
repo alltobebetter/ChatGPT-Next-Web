@@ -24,13 +24,6 @@ function parseApiKey(bearToken: string) {
   };
 }
 
-import { NextRequest } from "next/server";
-import { ModelProvider } from "./types";
-import { getServerSideConfig } from "./config";
-import md5 from "spark-md5";
-import { getIP } from "./utils";
-import { FREE_MODELS } from "./constants";
-
 async function verifyRecaptcha(token: string) {
   try {
     const recaptchaRes = await fetch(
@@ -102,11 +95,6 @@ export async function auth(req: NextRequest, modelProvider: ModelProvider) {
       msg: "you are not allowed to access with your own api key",
     };
   }
-
-  return {
-    error: false
-  };
-}
 
   if (!apiKey) {
     const serverConfig = getServerSideConfig();
