@@ -28,6 +28,9 @@ export async function auth(req: NextRequest, modelProvider: ModelProvider) {
   const authToken = req.headers.get("Authorization") ?? "";
   const recaptchaToken = req.headers.get("Recaptcha-Token") ?? "";
 
+  console.log("[Auth] Start auth check");
+  console.log("[Auth] Recaptcha token:", recaptchaToken ? "存在" : "不存在");
+
   // check if it is openai api key or user token
   const { accessCode, apiKey } = parseApiKey(authToken);
   const hashedCode = md5.hash(accessCode ?? "").trim();
@@ -41,6 +44,7 @@ export async function auth(req: NextRequest, modelProvider: ModelProvider) {
 
   // 验证 ReCaptcha (可选)
   if (process.env.RECAPTCHA_SECRET_KEY && recaptchaToken) {
+    console.log("[ReCaptcha] 开始验证");
     try {
       const recaptchaRes = await fetch(
         `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`,
@@ -48,18 +52,26 @@ export async function auth(req: NextRequest, modelProvider: ModelProvider) {
       );
 
       const result = await recaptchaRes.json();
+      console.log("[ReCaptcha] 验证结果:", result);
+      
       const minScore = Number(process.env.RECAPTCHA_MIN_SCORE || 0.5);
+      console.log("[ReCaptcha] 最低分数:", minScore);
+      console.log("[ReCaptcha] 实际分数:", result.score);
 
       if (!result.success || result.score < minScore) {
+        console.log("[ReCaptcha] 验证失败");
         return {
           error: true,
           msg: "人机验证失败,请重试",
         };
       }
+      console.log("[ReCaptcha] 验证成功");
     } catch (err) {
-      console.error("[ReCaptcha] 验证失败:", err);
+      console.error("[ReCaptcha] 验证出错:", err);
       // 如果验证失败,继续处理请求
     }
+  } else {
+    console.log("[ReCaptcha] 跳过验证: SECRET_KEY或Token不存在");
   }
 
   // 获取当前请求的模型名称
