@@ -47,7 +47,7 @@ async function verifyRecaptcha(token: string) {
   }
 }
 
-export function auth(req: NextRequest, modelProvider: ModelProvider) {
+export async function auth(req: NextRequest, modelProvider: ModelProvider) {
   // 验证 ReCaptcha
   const recaptchaToken = req.headers.get("Recaptcha-Token");
   if (!recaptchaToken) {
@@ -57,7 +57,14 @@ export function auth(req: NextRequest, modelProvider: ModelProvider) {
     };
   }
 
-  // 先返回同步验证结果
+  const { success } = await verifyRecaptcha(recaptchaToken);
+  if (!success) {
+    return {
+      error: true,
+      msg: "人机验证失败,请重试",
+    };
+  }
+
   const authToken = req.headers.get("Authorization") ?? "";
   const { accessCode, apiKey } = parseApiKey(authToken);
   const hashedCode = md5.hash(accessCode ?? "").trim();
@@ -88,16 +95,6 @@ export function auth(req: NextRequest, modelProvider: ModelProvider) {
     };
   }
 
-  // 异步验证 ReCaptcha
-  verifyRecaptcha(recaptchaToken).then(({ success }) => {
-    if (!success) {
-      return {
-        error: true,
-        msg: "人机验证失败,请重试",
-      };
-    }
-  });
-
   if (!apiKey) {
     const serverConfig = getServerSideConfig();
     let systemApiKey: string | undefined;
@@ -106,7 +103,41 @@ export function auth(req: NextRequest, modelProvider: ModelProvider) {
       case ModelProvider.Stability:
         systemApiKey = serverConfig.stabilityApiKey;
         break;
-      // ... 其他 case
+      case ModelProvider.GeminiPro:
+        systemApiKey = serverConfig.googleApiKey;
+        break;
+      case ModelProvider.Claude:
+        systemApiKey = serverConfig.anthropicApiKey;
+        break;
+      case ModelProvider.Doubao:
+        systemApiKey = serverConfig.bytedanceApiKey;
+        break;
+      case ModelProvider.Ernie:
+        systemApiKey = serverConfig.baiduApiKey;
+        break;
+      case ModelProvider.Qwen:
+        systemApiKey = serverConfig.alibabaApiKey;
+        break;
+      case ModelProvider.Moonshot:
+        systemApiKey = serverConfig.moonshotApiKey;
+        break;
+      case ModelProvider.Iflytek:
+        systemApiKey =
+          serverConfig.iflytekApiKey + ":" + serverConfig.iflytekApiSecret;
+        break;
+      case ModelProvider.XAI:
+        systemApiKey = serverConfig.xaiApiKey;
+        break;
+      case ModelProvider.ChatGLM:
+        systemApiKey = serverConfig.chatglmApiKey;
+        break;
+      case ModelProvider.GPT:
+      default:
+        if (req.nextUrl.pathname.includes("azure/deployments")) {
+          systemApiKey = serverConfig.azureApiKey;
+        } else {
+          systemApiKey = serverConfig.apiKey;
+        }
     }
 
     if (systemApiKey) {
