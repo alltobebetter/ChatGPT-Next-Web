@@ -24,25 +24,29 @@ function parseApiKey(bearToken: string) {
   };
 }
 
-export function auth(req: NextRequest, modelProvider: ModelProvider) {
+export async function auth(req: NextRequest, modelProvider: ModelProvider) {
   const authToken = req.headers.get("Authorization") ?? "";
   const recaptchaToken = req.headers.get("Recaptcha-Token") ?? "";
   
   // 验证 ReCaptcha
   if (process.env.RECAPTCHA_SECRET_KEY) {
-    const recaptchaRes = await fetch(
-      `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`,
-      { method: 'POST' }
-    );
+    try {
+      const recaptchaRes = await fetch(
+        `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${recaptchaToken}`,
+        { method: 'POST' }
+      );
 
-    const result = await recaptchaRes.json();
-    const minScore = Number(process.env.RECAPTCHA_MIN_SCORE || 0.5);
+      const result = await recaptchaRes.json();
+      const minScore = Number(process.env.RECAPTCHA_MIN_SCORE || 0.5);
 
-    if (!result.success || result.score < minScore) {
-      return {
-        error: true,
-        msg: "人机验证失败,请重试",
-      };
+      if (!result.success || result.score < minScore) {
+        return {
+          error: true,
+          msg: "人机验证失败,请重试",
+        };
+      }
+    } catch (err) {
+      console.error("[ReCaptcha] 验证失败:", err);
     }
   }
 
