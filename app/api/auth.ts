@@ -24,23 +24,12 @@ function parseApiKey(bearToken: string) {
   };
 }
 
-export async function auth(req: NextRequest, modelProvider: ModelProvider) {
-  console.log("[Auth] Start auth check");
-  
-  // 检查 ReCaptcha Token
-  const recaptchaToken = req.headers.get("Recaptcha-Token");
-  console.log("[Auth] Recaptcha token:", recaptchaToken ? "存在" : "不存在");
-
-  // 如果设置了 SECRET_KEY 但没有 token，返回错误
-  if (process.env.RECAPTCHA_SECRET_KEY && !recaptchaToken) {
-    return {
-      error: true,
-      msg: "需要ReCaptcha验证",
-    };
-  }
-
+export function auth(req: NextRequest, modelProvider: ModelProvider) {
   const authToken = req.headers.get("Authorization") ?? "";
+
+  // check if it is openai api key or user token
   const { accessCode, apiKey } = parseApiKey(authToken);
+
   const hashedCode = md5.hash(accessCode ?? "").trim();
 
   const serverConfig = getServerSideConfig();
@@ -50,8 +39,10 @@ export async function auth(req: NextRequest, modelProvider: ModelProvider) {
   console.log("[User IP] ", getIP(req));
   console.log("[Time] ", new Date().toLocaleString());
 
+  // 获取当前请求的模型名称
   const requestedModel = req.headers.get("Model") ?? "";
   
+  // 检查是否是受限模型且没有访问码
   if (!FREE_MODELS.includes(requestedModel) && 
       serverConfig.needCode && 
       !serverConfig.codes.has(hashedCode) && 
@@ -69,5 +60,64 @@ export async function auth(req: NextRequest, modelProvider: ModelProvider) {
     };
   }
 
-  return { error: false };
+  // if user does not provide an api key, inject system api key
+  if (!apiKey) {
+    const serverConfig = getServerSideConfig();
+
+    let systemApiKey: string | undefined;
+
+    switch (modelProvider) {
+      case ModelProvider.Stability:
+        systemApiKey = serverConfig.stabilityApiKey;
+        break;
+      case ModelProvider.GeminiPro:
+        systemApiKey = serverConfig.googleApiKey;
+        break;
+      case ModelProvider.Claude:
+        systemApiKey = serverConfig.anthropicApiKey;
+        break;
+      case ModelProvider.Doubao:
+        systemApiKey = serverConfig.bytedanceApiKey;
+        break;
+      case ModelProvider.Ernie:
+        systemApiKey = serverConfig.baiduApiKey;
+        break;
+      case ModelProvider.Qwen:
+        systemApiKey = serverConfig.alibabaApiKey;
+        break;
+      case ModelProvider.Moonshot:
+        systemApiKey = serverConfig.moonshotApiKey;
+        break;
+      case ModelProvider.Iflytek:
+        systemApiKey =
+          serverConfig.iflytekApiKey + ":" + serverConfig.iflytekApiSecret;
+        break;
+      case ModelProvider.XAI:
+        systemApiKey = serverConfig.xaiApiKey;
+        break;
+      case ModelProvider.ChatGLM:
+        systemApiKey = serverConfig.chatglmApiKey;
+        break;
+      case ModelProvider.GPT:
+      default:
+        if (req.nextUrl.pathname.includes("azure/deployments")) {
+          systemApiKey = serverConfig.azureApiKey;
+        } else {
+          systemApiKey = serverConfig.apiKey;
+        }
+    }
+
+    if (systemApiKey) {
+      console.log("[Auth] use system api key");
+      req.headers.set("Authorization", `Bearer ${systemApiKey}`);
+    } else {
+      console.log("[Auth] admin did not provide an api key");
+    }
+  } else {
+    console.log("[Auth] use user api key");
+  }
+
+  return {
+    error: false,
+  };
 }

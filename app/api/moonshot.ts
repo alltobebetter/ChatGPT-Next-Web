@@ -22,7 +22,7 @@ export async function handle(
     return NextResponse.json({ body: "OK" }, { status: 200 });
   }
 
-  const authResult = await auth(req, ModelProvider.Moonshot);
+  const authResult = auth(req, ModelProvider.Moonshot);
   if (authResult.error) {
     return NextResponse.json(authResult, {
       status: 401,

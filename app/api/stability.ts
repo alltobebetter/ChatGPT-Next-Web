@@ -39,7 +39,7 @@ export async function handle(
     10 * 60 * 1000,
   );
 
-  const authResult = await auth(req, ModelProvider.Stability);
+  const authResult = auth(req, ModelProvider.Stability);
 
   if (authResult.error) {
     return NextResponse.json(authResult, {
