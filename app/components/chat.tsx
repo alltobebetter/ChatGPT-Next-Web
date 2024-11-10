@@ -931,6 +931,7 @@ function _Chat() {
   const session = chatStore.currentSession();
   const config = useAppConfig();
   const fontSize = config.fontSize;
+  const [lastMessageTime, setLastMessageTime] = useState<number>(0);
   const fontFamily = config.fontFamily;
 
   const [showExport, setShowExport] = useState(false);
@@ -1033,6 +1034,17 @@ function _Chat() {
       matchCommand.invoke();
       return;
     }
+    const now = Date.now();
+    const timeSinceLastMessage = now - lastMessageTime;
+    const minInterval = 5000; // 5秒 = 5000毫秒
+    
+    if (timeSinceLastMessage < minInterval) {
+      const remainingTime = Math.ceil((minInterval - timeSinceLastMessage) / 1000);
+      showToast(`请等待 ${remainingTime} 秒后再发送消息`);
+      return;
+    }
+    
+    setLastMessageTime(now);
     setIsLoading(true);
     chatStore
       .onUserInput(userInput, attachImages)
